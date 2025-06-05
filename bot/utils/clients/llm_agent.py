@@ -38,7 +38,7 @@ class GoldenKeyAgent:
                          user_passes: str = None,
                          services: str = None) -> str:
         """Генерация системного промпта"""
-        with open('system_prompt.md', 'r') as file:
+        with open('system_prompt_V2.md', 'r') as file:
             system_prompt = file.read()
             replacements = {
                 '--user_profile--': user_profile,

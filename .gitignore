@@ -13,4 +13,4 @@ wheels/
 llm_bot_api/*
 llm_sandbox/*
 
-bot/bot.log
+bot/logs/*
