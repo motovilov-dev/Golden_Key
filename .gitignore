@@ -1,0 +1,16 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.pytest_cache
+.vscode
+
+# Virtual environments
+.venv
+llm_bot_api/*
+llm_sandbox/*
+
+bot/bot.log
