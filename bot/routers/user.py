@@ -173,7 +173,7 @@ async def cmd_profile(callback: CallbackQuery, state: FSMContext, **data) -> Non
             phone=gk_user.phone,
             passes_amount=gk_user.passes_amount
         )
-        await callback.message.edit_text(text=text, reply_markup=back_from_profile())
+        await callback.message.edit_text(text=text, reply_markup=back_from_profile(gk_user))
     except Exception as e:
         logger.error(f'Ошибка выдачи профиля | {e}')
         await callback.message.delete()
