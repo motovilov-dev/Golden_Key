@@ -266,7 +266,7 @@ def back_profile():
 
 
 def back_from_profile(gk_user):
-    if gk_user.aeroflot_id:
+    if not gk_user.aeroflot_id:
         keyboard = [
             [InlineKeyboardButton(text='Добавить карту АэроФлот', callback_data='add_af_card')],
             [InlineKeyboardButton(text='Мои промокоды', callback_data='promo')],

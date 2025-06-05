@@ -17,7 +17,7 @@ class AsyncAPIClient:
     
     def __init__(
         self,
-        base_url: str = 'https://api.goldenkey.world',
+        base_url: str = 'http://api.dev.goldenkey.world',
         timeout: int = 10,
         token: str = None,
         headers: Optional[Dict[str, str]] = None,
@@ -215,7 +215,8 @@ class AsyncAPIClient:
             'POST',
             '/api/cabinet/exchange-visit',
             json={
-                "services_code": code
+                "services_code": code,
+                "count": 1
             },
             headers={'Authorization': f'Bearer {self.token}'}
         )

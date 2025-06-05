@@ -121,7 +121,7 @@ async def reg_email_handler(message: Message, state: FSMContext, data) -> None:
     except Exception as e:
         logger.warning(f'Ошибка регистрации пользователя | {e}')
         return await message.answer('Ошибка регистрации, попробуйте позже', reply_markup=get_back_keyboard())
-    await message.answer(RussianMessages().success_login.format(first_name=message.from_user.first_name), reply_markup=get_main_keyboard(True))
+    await message.answer(RussianMessages().success_login, reply_markup=get_main_keyboard(True))
 
 async def auth_phone_handler(message: Message, state: FSMContext, data) -> None:
     # await message.bot.delete_message(chat_id=message.chat.id, message_id=message.message_id-1)
@@ -155,7 +155,7 @@ async def auth_sms_code_handler(message: Message, state: FSMContext, data) -> No
     await state.set_state(None)
     result = await create_new_gk_user_via_token(token=auth.get('token'), user=data.get('user'))
     if result is True:
-        await message.answer(RussianMessages().success_login.format(first_name=message.from_user.first_name), reply_markup=get_main_keyboard(True))
+        await message.answer(RussianMessages().success_login, reply_markup=get_main_keyboard(True))
     if result is False:
         await message.answer('<b>Неверные email или пароль. Попроуйте еще раз</b>', reply_markup=get_login_choose())
     
@@ -187,7 +187,7 @@ async def auth_password_handler(message: Message, state: FSMContext, data) -> No
         result = False
 
     if result is True:
-        await message.answer(RussianMessages().success_login.format(first_name=message.from_user.first_name), reply_markup=get_main_keyboard(True))
+        await message.answer(RussianMessages().success_login, reply_markup=get_main_keyboard(True))
     if result is False:
         await message.answer('<b>Неверные email или пароль. Попроуйте еще раз</b>', reply_markup=get_login_choose())
 
