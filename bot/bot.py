@@ -16,7 +16,7 @@ from routers import main_router, user_router
 from aiogram.fsm.storage.memory import MemoryStorage
 
 loguru_logger.add(
-    "bot.log",
+    "logs/bot.log",
     rotation="100 MB",
     retention="100 days",
     format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}"
