@@ -20,18 +20,18 @@ async def reg_user(email: str, first_name: str, last_name: str, phone):
     async with AsyncAPIClient() as client:
         try:
             reg_data = await client.reg_final(email=email, first_name=first_name, last_name=last_name, phone=phone)
-            token = reg_data.get('token')
+            token = reg_data.get('data').get('token')
             print(reg_data)
             me = await client.get_me(token=token)
-            return me, reg_data
+            return me, token
         except Exception as e:
             print(e)
             return None
 
 async def reg_new_gk_user(phone, email, first_name, last_name, user: User):
-    gk_user, auth_data = await reg_user(email=email, first_name=first_name, last_name=last_name, phone=phone)
+    gk_user, token = await reg_user(email=email, first_name=first_name, last_name=last_name, phone=phone)
     if gk_user:
-        await create_gk_user(gk_user=gk_user, user=user, password='', token=auth_data.get('token'))
+        await create_gk_user(gk_user=gk_user, user=user, password='', token=token)
         return gk_user
     else:
         return None
