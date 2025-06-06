@@ -1,6 +1,7 @@
 from aiogram import Router, F
 from aiogram.types import URLInputFile
 from aiogram.filters import StateFilter
+import re
 
 from utils.clients.llm_agent import GoldenKeyAgent
 from middleware.auth import AuthMiddleware
@@ -410,10 +411,32 @@ async def handle_text(message: Message, state: FSMContext, **data) -> None:
     user_profile = user_profile
     services = None
     await message.bot.send_chat_action(message.chat.id, 'typing')
-    result = agent.ask_question(message.text, user_info, user_profile, user_orders, user_passes, services)
-    logger.info(f'User: {message.from_user.username} - {message.text} - {result.answer}')
+    def sanitize_html(text: str) -> str:
+        """
+        Очищает текст от запрещённых HTML-тегов и корректирует переносы строк для Telegram.
+        - Заменяет <br>, <br/>, <br /> на \n\n (двойной перенос).
+        - Удаляет все теги, кроме <b>, <i>, <code>.
+        - Схлопывает множественные переносы строк.
+        """
+        # Разрешенные теги (b, i, code)
+        allowed_tags = {"b", "i", "code"}
+        text = re.sub(r"<(?!\/?(b|i|code)\b)[^>]+>", "", text, flags=re.IGNORECASE)
+        
+        # Заменяем все варианты <br> на \n\n (двойной перенос)
+        text = re.sub(r"<br\s*/?>", "\\n\\n", text, flags=re.IGNORECASE)
+        
+        # Убираем лишние переносы (3+ подряд -> 2)
+        text = re.sub(r"\n{3,}", "\n\n", text)
+        
+        return text.strip()
     try:
-        message_text = result.answer
+        result = agent.ask_question(message.text, user_info, user_profile, user_orders, user_passes, services)
+    except Exception as e:
+        logger.warning(f'AI Agent: {e}')
+        return
+    try:
+        message_text = str(sanitize_html(result.answer).replace('<br>', '\\n\\n'))
+        logger.info(f'User: {message.from_user.username} - {message.text} - {message_text}')
         keyboard = []
         if result.buttons:
             for button in result.buttons:
