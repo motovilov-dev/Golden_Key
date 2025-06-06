@@ -17,7 +17,7 @@ class AsyncAPIClient:
     
     def __init__(
         self,
-        base_url: str = 'http://api.dev.goldenkey.world',
+        base_url: str = 'https://api.dev.goldenkey.world',
         timeout: int = 10,
         token: str = None,
         headers: Optional[Dict[str, str]] = None,

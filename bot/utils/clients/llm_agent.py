@@ -32,24 +32,20 @@ class GoldenKeyAgent:
         self.chat_histories[chat_id].append({"role": role, "content": content})
 
     def get_system_prompt(self, 
-                         user_info: dict,
-                         user_profile: str = None,
-                         users_orders: str = None,
-                         user_passes: str = None,
-                         services: str = None) -> str:
+                     user_info: dict,
+                     user_profile: str = None,
+                     users_orders: str = None,
+                     user_passes: str = None,
+                     services: str = None) -> str:
         """Генерация системного промпта"""
         with open('system_prompt_V2.md', 'r') as file:
             system_prompt = file.read()
-            replacements = {
-                '--user_profile--': user_profile,
-                '--user_orders--': users_orders,
-                '--user_passes--': user_passes,
-                '--services--': services
-            }
-            for placeholder, value in replacements.items():
-                if value:
-                    system_prompt = system_prompt.replace(placeholder, value)
-        return system_prompt.replace('--user_info--', str(user_info))
+        system_prompt = system_prompt.replace('--user-info--', str(user_info))
+        system_prompt = system_prompt.replace('--user-profile--', str(user_profile))
+        system_prompt = system_prompt.replace('--user-orders--', str(users_orders))
+        system_prompt = system_prompt.replace('--user-passes--', str(user_passes))
+        system_prompt = system_prompt.replace('--services--', str(services))
+        return system_prompt
 
     def ask_question(self, 
                     question: str, 
@@ -71,7 +67,8 @@ class GoldenKeyAgent:
             base_url="https://api.aitunnel.ru/v1/"
         )
 
-        MODEL = "deepseek-chat"
+        MODEL = "llama-4-scout"
+        # MODEL = "gpt-4o-mini"
 
         # Формируем список сообщений
         messages = [{"role": "system", "content": system_prompt}]
@@ -84,13 +81,14 @@ class GoldenKeyAgent:
         messages.append({"role": "user", "content": question})
 
         completion = client.beta.chat.completions.parse(
-            temperature=0.8,
+            temperature=0.93,
             model=MODEL,
             messages=messages,
             response_format=Result
         )
         
         response = completion.choices[0].message
+        print(response)
         
         # Обновляем историю чата
         self._update_chat_history(chat_id, "user", question)
