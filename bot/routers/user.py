@@ -130,7 +130,7 @@ async def cmd_services(callback: CallbackQuery, state: FSMContext, **data) -> No
 
 @user_router.callback_query(F.data.contains('add_af_card'))
 async def cmd_af_card(callback: CallbackQuery, state: FSMContext, **data) -> None:
-    msg_text = 'Введите номер вашей карты:\n\n<i>Подсказка: 0000 0000 0000 0000'
+    msg_text = 'Введите номер вашей карты:\n\n<i>Подсказка: 0000 0000 00</i>'
     await state.set_state('add_af_card')
     await callback.message.edit_text(text=msg_text, reply_markup=get_back_keyboard())
 
@@ -139,8 +139,8 @@ async def msg_cmd_af_card(message: Message, state: FSMContext, **data) -> None:
     user = data.get('user')
     gk_user = data.get('gk_user')
     card_id = message.text.replace(' ', '')
-    if len(card_id) != 16:
-        await message.answer('Номер карты должен состоять из 16 цифр', reply_markup=get_back_keyboard())
+    if len(card_id) > 10:
+        await message.answer('Номер карты должен состоять из 8-10 цифр', reply_markup=get_back_keyboard())
         return
     if not card_id.isdigit():
         await message.answer('Номер карты должен состоять из цифр', reply_markup=get_back_keyboard())

@@ -43,7 +43,7 @@ async def main_services(call: CallbackQuery, state: FSMContext, data) -> None:
                     promo_services, 
                     current_index, 
                     promo_services[current_index].id)
-            if promo_services[0].code == 'EX-AF':
+            if promo_services[current_index].code == 'EX-AF':
                 if not gk_user.aeroflot_id:
                     keyboard = get_services_carousel_keyboard(
                         promo_services, 
@@ -68,7 +68,7 @@ async def main_services(call: CallbackQuery, state: FSMContext, data) -> None:
                     promo_services, 
                     current_index, 
                     promo_services[current_index].id)
-            if promo_services[0].code == 'EX-AF':
+            if promo_services[current_index].code == 'EX-AF':
                 if not gk_user.aeroflot_id:
                     keyboard = get_services_carousel_keyboard(
                         promo_services, 
@@ -97,10 +97,13 @@ async def main_services(call: CallbackQuery, state: FSMContext, data) -> None:
         async with AsyncAPIClient(token=gk_user.token) as client:
             try: 
                 result = await client.exchange_visit(promo_service.code)
-                print(result)
             except Exception as e:
+                if promo_service.code == 'EX-AF':
+                    return await call.answer('Данная услуга доступна только пользователем ПСБ', show_alert=True)
+                if e.message == 'Too Many Requests':
+                    return await call.answer('Визиты можно обменивать не чаще чем 1 раз в минуту', show_alert=True)
                 logger.warning(f'Ошибка при обмене на промокод | {e}')
-                return await call.answer('Ошибка обмена')
+                return await call.answer('В этом месяце вы уже использовали возможность обмена визита на промокод', show_alert=True)
         await call.message.edit_reply_markup(reply_markup=None)
         await call.message.answer('Успешно! Промокод уже отправлен вам на почту!', reply_markup=back_profile())
         return await call.answer('Успешно! Промокод уже отправлен вам на почту!', show_alert=True)
