@@ -215,8 +215,7 @@ class AsyncAPIClient:
             'POST',
             '/api/cabinet/exchange-visit',
             json={
-                "services_code": code,
-                "count": 1
+                "services_code": code
             },
             headers={'Authorization': f'Bearer {self.token}'}
         )
