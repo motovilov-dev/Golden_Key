@@ -117,6 +117,8 @@ async def cmd_passes(callback: CallbackQuery, state: FSMContext, **data) -> None
 
 @user_router.callback_query(F.data.contains('services'))
 async def cmd_services(callback: CallbackQuery, state: FSMContext, **data) -> None:
+    if not data.get('gk_user'):
+        return await callback.answer('Вам необходимо авторизоваться', show_alert=True)
     msg_text = 'Дополнительные услуги'
     try:
         await main_services(call=callback, state=state, data=data)
@@ -130,6 +132,8 @@ async def cmd_services(callback: CallbackQuery, state: FSMContext, **data) -> No
 
 @user_router.callback_query(F.data.contains('add_af_card'))
 async def cmd_af_card(callback: CallbackQuery, state: FSMContext, **data) -> None:
+    if not data.get('gk_user'):
+        return await callback.answer('Вам необходимо авторизоваться', show_alert=True)
     msg_text = 'Введите номер вашей карты:\n\n<i>Подсказка: 0000 0000 00</i>'
     await state.set_state('add_af_card')
     await callback.message.edit_text(text=msg_text, reply_markup=get_back_keyboard())
@@ -159,6 +163,8 @@ async def msg_cmd_af_card(message: Message, state: FSMContext, **data) -> None:
 
 @user_router.callback_query(F.data.contains('profile'))
 async def cmd_profile(callback: CallbackQuery, state: FSMContext, **data) -> None: 
+    if not data.get('gk_user'):
+        return await callback.answer('Вам необходимо авторизоваться', show_alert=True)
     msg_text = 'Профиль'
     gk_user = data.get('gk_user')
     try:
@@ -185,6 +191,8 @@ async def cmd_profile(callback: CallbackQuery, state: FSMContext, **data) -> Non
 
 @user_router.callback_query(F.data.contains('promo'))
 async def cmd_promo(call: CallbackQuery, state: FSMContext, **data):
+    if not data.get('gk_user'):
+        return await callback.answer('Вам необходимо авторизоваться', show_alert=True)
     gk_user = data.get('gk_user')
     async with AsyncAPIClient(token=gk_user.token) as client:
         try:
