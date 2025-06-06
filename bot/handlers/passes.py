@@ -56,6 +56,10 @@ async def main_passes(call: CallbackQuery, state: FSMContext, data) -> None:
         except Exception as e:
             raise e
     elif query == 'buy':
+        if not gk_user:
+            await call.answer('Вы не авторизованы', show_alert=True)
+            return
+        await call.message.edit_text('Выберете проход', reply_markup=get_buy_passes_keyboard(russian_passes, foreign_passes))
         product_id = call.data.split(':')[2]
         async with AsyncSessionFactory() as session:
             products_repository = ProductsRepository(session)
