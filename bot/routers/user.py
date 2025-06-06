@@ -192,7 +192,7 @@ async def cmd_profile(callback: CallbackQuery, state: FSMContext, **data) -> Non
 @user_router.callback_query(F.data.contains('promo'))
 async def cmd_promo(call: CallbackQuery, state: FSMContext, **data):
     if not data.get('gk_user'):
-        return await callback.answer('Вам необходимо авторизоваться', show_alert=True)
+        return await call.answer('Вам необходимо авторизоваться', show_alert=True)
     gk_user = data.get('gk_user')
     async with AsyncAPIClient(token=gk_user.token) as client:
         try:
@@ -411,6 +411,7 @@ async def handle_text(message: Message, state: FSMContext, **data) -> None:
     services = None
     await message.bot.send_chat_action(message.chat.id, 'typing')
     result = agent.ask_question(message.text, user_info, user_profile, user_orders, user_passes, services)
+    logger.info(f'User: {message.from_user.username} - {message.text} - {result.answer}')
     try:
         message_text = result.answer
         keyboard = []
