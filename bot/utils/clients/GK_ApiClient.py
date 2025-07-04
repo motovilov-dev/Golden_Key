@@ -203,7 +203,9 @@ class AsyncAPIClient:
                 "quantity": quantity,
                 "installments": installments,
                 "mobile": mobile,
-                "promocode": promocode
+                "promocode": promocode,
+                "success_url": "https://t.me/GoldenKey_develop_Bot?start=pay_success",
+                "fail_url": "https://t.me/GoldenKey_develop_Bot?start=pay_fail"
             },
             headers={'Authorization': f'Bearer {self.token}'}
         )
@@ -290,6 +292,17 @@ class AsyncAPIClient:
             '/api/cabinet/card-af',
             headers={'Authorization': f'Bearer {self.token}'},
             json={'card': card_number}
+        )
+        return result
+    
+    async def find_address(self, address: str, user_id: int, **kwargs):
+        """POST запрос"""
+        self.base_url = 'https://iway.ru'
+        result = await self._request(
+            'GET',
+            f'/transnextgen/v4/places/find?user_id={user_id}&lang=ru&term={address}',
+            headers={'Authorization': f'Bearer {self.token}'},
+            **kwargs
         )
         return result
 

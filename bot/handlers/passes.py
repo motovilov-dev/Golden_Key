@@ -77,7 +77,7 @@ async def main_passes(call: CallbackQuery, state: FSMContext, data) -> None:
 💰 Стоимость: {product.price} ₽
 🎫 Количество проходов: {product.count}
 
-<i>Выберете банк</i>
+<i>Выберете способ оплаты</i>
 ''', reply_markup=get_choose_banks(banks=banks, call_prefix=f'passes:pay:{product_id}:'))
     
     elif query == 'pay':

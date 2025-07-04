@@ -173,6 +173,10 @@ async def auth_email_handler(message: Message, state: FSMContext, data) -> None:
 async def auth_password_handler(message: Message, state: FSMContext, data) -> None:
     # await message.bot.delete_message(chat_id=message.chat.id, message_id=message.message_id-1)
     password = message.text
+    try:
+        await message.delete()
+    except:
+        pass
     await state.update_data(password=password)
     state_data = await state.get_data()
     await state.set_state(None)

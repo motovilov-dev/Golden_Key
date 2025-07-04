@@ -16,6 +16,7 @@ def get_main_keyboard(gk_user: bool = False, debug: bool = False) -> InlineKeybo
     if gk_user is True or debug:
         keyboard.append([InlineKeyboardButton(text="🚪 Выйти из аккаунта", callback_data="login:main")])
         keyboard.append([InlineKeyboardButton(text="🔌 Дополнительные услуги", callback_data="services:main")])
+        keyboard.append([InlineKeyboardButton(text="🚗 Трансфер", callback_data="transfers:main")])
         keyboard.append([
             InlineKeyboardButton(text="👤 Профиль", callback_data="profile"),
             InlineKeyboardButton(text="🌐 QR", callback_data="qr"),

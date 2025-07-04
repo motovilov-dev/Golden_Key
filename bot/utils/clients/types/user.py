@@ -47,7 +47,7 @@ class UserData(BaseModel):
     first_name_changed_at: Optional[Any] = None
     discount_card: DiscountCard
     promo: Optional[Any] = None
-    promo_services: List[PromoService]
+    promo_services: Optional[List[Any]] = None
     qr: str
     role: Role
     promo: Any

@@ -20,6 +20,10 @@ main_router.callback_query.middleware(GkAuthMiddleware())
 
 @main_router.message(Command('start'))
 async def cmd_start(message: Message, state: FSMContext, **data) -> None:
+    # Извлекаем аргументы из start
+    start_args = message.text.split()[1:] if len(message.text.split()) > 1 else []
+    print(f"Аргументы start: {start_args}")
+    
     db_user = data.get('user')
     gk_auth = data.get('gk_auth')
     await state.set_state(None)

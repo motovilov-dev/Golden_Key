@@ -11,6 +11,7 @@ from handlers.passes import *
 from handlers.login import *
 from handlers.services import *
 from handlers.sessions import *
+from handlers.transfers import *
 from filters.in_state import AuthStateFilter, RegStateFilter
 from db.schemas.gk_user import *
 from db.schemas.user import *
@@ -88,6 +89,19 @@ async def cmd_back(callback: CallbackQuery, state: FSMContext, **data) -> None:
         await callback.message.answer(
             RussianMessages().get_start_message(first_name=db_user.first_name),
             reply_markup=get_main_keyboard(gk_auth)
+        )
+
+@user_router.callback_query(F.data.contains('transfers'))
+async def cmd_transfers(callback: CallbackQuery, state: FSMContext, **data) -> None:
+    msg_text = 'Трансфер'
+    try:
+        await main_transfers(callback, state, data)
+    except Exception as e:
+        logger.error(f'Ошибка выдачи трансфера | {e}')
+        await callback.message.delete()
+        await callback.message.answer(
+            msg_text,
+            reply_markup=get_back_keyboard(),
         )
 
 @user_router.callback_query(F.data.contains('halls'))
@@ -344,7 +358,7 @@ async def msg_auth_state(message: Message, state: FSMContext, **data):
 async def ignore_callback(callback: CallbackQuery, state: FSMContext, **data) -> None:
     await callback.answer('Информацонная кнопка')
 
-@user_router.message(F.text)
+@user_router.message(StateFilter(None), F.text)
 async def handle_text(message: Message, state: FSMContext, **data) -> None:
     tg_user = data.get('user')
     gk_user = data.get('gk_user')
@@ -446,3 +460,16 @@ async def handle_text(message: Message, state: FSMContext, **data) -> None:
             await message.answer(message_text)
     except Exception as e:
         logger.warning(e)
+
+# ---------------- TRANSFERS STATE HANDLERS -------------------
+from handlers.transfers import STATE_SET_FROM, STATE_SET_TO, set_from_address, set_to_address
+
+
+@user_router.message(StateFilter(STATE_SET_FROM))
+async def msg_transfer_set_from(message: Message, state: FSMContext, **data):
+    await set_from_address(message, state, data)
+
+
+@user_router.message(StateFilter(STATE_SET_TO))
+async def msg_transfer_set_to(message: Message, state: FSMContext, **data):
+    await set_to_address(message, state, data)

@@ -14,3 +14,6 @@ llm_bot_api/*
 llm_sandbox/*
 
 bot/logs/*
+postgres-data/*
+redis-data/*
+sql-migrate/*
