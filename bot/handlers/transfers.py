@@ -1,6 +1,7 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
 from typing import Optional, Union
+from utils.clients.GK_ApiClient import AsyncAPIClient
 
 
 def _get_transfers_tabs_keyboard(active: str = "transfer") -> InlineKeyboardMarkup:
@@ -62,6 +63,45 @@ async def main_transfers(call: CallbackQuery, state: FSMContext, data) -> None:
         to_addr = state_data.get("transfer_to")
         await state.update_data(transfer_from=to_addr, transfer_to=from_addr)
         await _show_route_screen(call, state)
+    elif query == "choose":
+        # Выбор из подсказок
+        parts = call.data.split(":")
+        addr_type = parts[2]
+        idx = int(parts[3]) if len(parts) > 3 else 0
+        st = await state.get_data()
+        suggestions = st.get("suggestions", [])
+        if 0 <= idx < len(suggestions):
+            chosen = suggestions[idx]
+            chosen_text = chosen.get("name") or chosen.get("address") or str(chosen)
+            if addr_type == ADDR_FROM:
+                await state.update_data(transfer_from=chosen_text)
+            else:
+                await state.update_data(transfer_to=chosen_text)
+        # Удаляем сообщение с вариантами
+        suggestions_msg_id = st.get("suggestions_msg_id")
+        if suggestions_msg_id:
+            try:
+                await call.bot.delete_message(call.message.chat.id, suggestions_msg_id)
+            except Exception:
+                pass
+            await state.update_data(suggestions_msg_id=None, suggestions=None)
+
+        await _show_route_screen(call, state)
+    elif query == "retry":
+        # Пользователь хочет изменить адрес. Просто запросим снова.
+        parts = call.data.split(":")
+        addr_type = parts[2]
+
+        # Clean suggestions message
+        try:
+            await call.message.delete()
+        except Exception:
+            pass
+
+        prompt_text = "📍 Укажите адрес отправления" if addr_type == ADDR_FROM else "🏁 Укажите адрес назначения"
+        prompt = await call.message.answer(f"<b>{prompt_text}</b>")
+        await state.update_data(prompt_msg_id=prompt.message_id)
+        await state.set_state(STATE_SET_FROM if addr_type == ADDR_FROM else STATE_SET_TO)
     elif query == "rent":
         await call.message.edit_text(
             "<b>🚙 Аренда с водителем</b>\n\n<i>Напишите точку отправления, либо выберите другой раздел.</i>",
@@ -86,6 +126,10 @@ STATE_SET_FROM = "transfers:set_from"
 STATE_SET_TO = "transfers:set_to"
 
 # ---------------------------------------------------------------------------
+
+# Виды адресов: 'from' и 'to'
+ADDR_FROM = "from"
+ADDR_TO = "to"
 
 
 def _build_route_text(from_addr: Optional[str], to_addr: Optional[str]) -> str:
@@ -196,39 +240,93 @@ async def _show_route_screen(call: Union[CallbackQuery, Message], state: FSMCont
 
 async def set_from_address(message: Message, state: FSMContext, data):
     """Сохраняет адрес отправления."""
-    await state.update_data(transfer_from=message.text)
-    await state.set_state(None)
-    state_data = await state.get_data()
-    # Удаляем prompt и ввод пользователя
-    prompt_id = state_data.get("prompt_msg_id")
-    if prompt_id:
-        try:
-            await message.bot.delete_message(message.chat.id, prompt_id)
-        except Exception:
-            pass
-        await state.update_data(prompt_msg_id=None)
-    try:
-        await message.delete()
-    except Exception:
-        pass
-    # Показываем обновлённый экран маршрута
-    await _show_route_screen(message, state)
+    await _handle_address_input(message, state, ADDR_FROM)
 
 
 async def set_to_address(message: Message, state: FSMContext, data):
     """Сохраняет адрес назначения."""
-    await state.update_data(transfer_to=message.text)
-    await state.set_state(None)
-    state_data = await state.get_data()
-    prompt_id = state_data.get("prompt_msg_id")
+    await _handle_address_input(message, state, ADDR_TO)
+
+
+async def _handle_address_input(message: Message, state: FSMContext, addr_type: str):
+    """Общий обработчик ввода адреса (from/to).
+
+    1. Удаляет prompt + пользовательское сообщение.
+    2. Запрашивает варианты у IWay API через GK_ApiClient.
+    3. Показывает клавиатуру с выбором или сообщение об ошибке.
+    """
+    # --- Cleanup prompt & user input ----------------------------------------
+    st = await state.get_data()
+    prompt_id = st.get("prompt_msg_id")
     if prompt_id:
         try:
             await message.bot.delete_message(message.chat.id, prompt_id)
         except Exception:
             pass
         await state.update_data(prompt_msg_id=None)
+
     try:
         await message.delete()
     except Exception:
         pass
-    await _show_route_screen(message, state) 
+
+    query_text = message.text.strip()
+
+    # --- Запрос вариантов ----------------------------------------------------
+    suggestions_raw = []
+    try:
+        async with AsyncAPIClient() as client:
+            resp = await client.find_address(address=query_text, user_id=message.from_user.id)
+            if isinstance(resp, dict):
+                suggestions_raw = resp.get("result", [])
+            elif isinstance(resp, list):
+                suggestions_raw = resp
+            else:
+                suggestions_raw = []
+    except Exception as e  :
+        print(f"Ошибка при получении адресов: {e}")
+        suggestions_raw = []
+
+    # Преобразуем в удобную структуру: text + place_id
+    suggestions: list[dict] = []
+    for item in suggestions_raw[:5]:
+        fmt = item.get("structured_formatting", {})
+        main = fmt.get("main_text") or item.get("description")
+        secondary = fmt.get("secondary_text")
+        full_text = f"{main}, {secondary}" if secondary else main
+        suggestions.append({
+            "text": full_text,
+            "place_id": item.get("place_id")
+        })
+
+    if not suggestions:
+        # Ничего не нашли — сохраняем текст как есть
+        if addr_type == ADDR_FROM:
+            await state.update_data(transfer_from=query_text)
+        else:
+            await state.update_data(transfer_to=query_text)
+        await state.set_state(None)
+        await _show_route_screen(message, state)
+        return
+
+    # Сохраняем варианты в state
+    await state.update_data(suggestions=suggestions, suggestions_type=addr_type)
+
+    # Строим клавиатуру вариантов (первые 5)
+    kb_rows = []
+    for idx, item in enumerate(suggestions):
+        kb_rows.append([InlineKeyboardButton(text=item["text"], callback_data=f"transfers:choose:{addr_type}:{idx}")])
+
+    # Кнопка изменить
+    kb_rows.append([InlineKeyboardButton(text="✏️ Изменить", callback_data=f"transfers:retry:{addr_type}")])
+    # Кнопка отмена
+    kb_rows.append([InlineKeyboardButton(text="⬅️ Отмена", callback_data="back")])
+
+    suggestions_msg = await message.bot.send_message(
+        chat_id=message.chat.id,
+        text=f"<b>Выберите адрес</b>",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=kb_rows)
+    )
+
+    await state.update_data(suggestions_msg_id=suggestions_msg.message_id)
+    await state.set_state(None) 

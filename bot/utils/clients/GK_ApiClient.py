@@ -17,7 +17,7 @@ class AsyncAPIClient:
     
     def __init__(
         self,
-        base_url: str = 'https://api.dev.goldenkey.world',
+        base_url: str = 'https://api.goldenkey.world',
         timeout: int = 10,
         token: str = None,
         headers: Optional[Dict[str, str]] = None,
@@ -50,11 +50,11 @@ class AsyncAPIClient:
             await self._session.close()
             self._session = None
     
-    async def _ensure_session(self) -> aiohttp.ClientSession:
+    async def _ensure_session(self, base_url: Optional[str] = None) -> aiohttp.ClientSession:
         """Создает сессию, если она еще не создана"""
         if self._session is None or self._session.closed:
             self._session = aiohttp.ClientSession(
-                base_url=self._base_url,
+                base_url=base_url or self._base_url,
                 headers=self._headers,
                 timeout=aiohttp.ClientTimeout(total=self._timeout)
             )
@@ -67,7 +67,8 @@ class AsyncAPIClient:
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
         json: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None
+        headers: Optional[Dict[str, str]] = None,
+        base_url: Optional[str] = None
     ) -> Any:
         """
         Базовый метод для выполнения HTTP запросов.
@@ -80,7 +81,7 @@ class AsyncAPIClient:
         :return: Ответ от сервера (обычно JSON)
         :raises: aiohttp.ClientError при ошибках запроса
         """
-        session = await self._ensure_session()
+        session = await self._ensure_session(base_url)
         request_headers = {**self._headers, **(headers or {})}
         
         async with session.request(
@@ -302,6 +303,7 @@ class AsyncAPIClient:
             'GET',
             f'/transnextgen/v4/places/find?user_id={user_id}&lang=ru&term={address}',
             headers={'Authorization': f'Bearer {self.token}'},
+            base_url='https://iway.ru',
             **kwargs
         )
         return result
