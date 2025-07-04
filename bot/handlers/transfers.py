@@ -240,15 +240,15 @@ async def _show_route_screen(call: Union[CallbackQuery, Message], state: FSMCont
 
 async def set_from_address(message: Message, state: FSMContext, data):
     """Сохраняет адрес отправления."""
-    await _handle_address_input(message, state, ADDR_FROM)
+    await _handle_address_input(message, state, ADDR_FROM, data)
 
 
 async def set_to_address(message: Message, state: FSMContext, data):
     """Сохраняет адрес назначения."""
-    await _handle_address_input(message, state, ADDR_TO)
+    await _handle_address_input(message, state, ADDR_TO, data)
 
 
-async def _handle_address_input(message: Message, state: FSMContext, addr_type: str):
+async def _handle_address_input(message: Message, state: FSMContext, addr_type: str, data):
     """Общий обработчик ввода адреса (from/to).
 
     1. Удаляет prompt + пользовательское сообщение.
@@ -272,11 +272,19 @@ async def _handle_address_input(message: Message, state: FSMContext, addr_type: 
 
     query_text = message.text.strip()
 
+    # Определяем user_id для запроса: приоритет gk_user.gk_user_id
+    user_id_param = None
+    try:
+        gk_user = data.get('gk_user') if data else None
+        user_id_param = gk_user.gk_user_id if gk_user else message.from_user.id
+    except Exception:
+        user_id_param = message.from_user.id
+
     # --- Запрос вариантов ----------------------------------------------------
     suggestions_raw = []
     try:
         async with AsyncAPIClient() as client:
-            resp = await client.find_address(address=query_text, user_id=message.from_user.id)
+            resp = await client.find_address(address=query_text, user_id=user_id_param)
             if isinstance(resp, dict):
                 suggestions_raw = resp.get("result", [])
             elif isinstance(resp, list):
